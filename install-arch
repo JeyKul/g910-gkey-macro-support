@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
+
 if (( EUID == 0 )); then
   echo 'Run as your regular desktop user, not root.' >&2
   exit 1
@@ -14,8 +15,59 @@ if (( $# > 1 )); then
   echo "Usage: bash install-arch [-n]" >&2
   exit 1
 fi
-command -v pacman >/dev/null || { echo 'This helper requires Arch Linux/pacman.' >&2; exit 1; }
-command -v makepkg >/dev/null || { echo 'Install base-devel first: sudo pacman -S --needed base-devel git' >&2; exit 1; }
+for command in pacman makepkg sudo; do
+  if ! command -v "$command" >/dev/null; then
+    echo "Missing $command. This helper requires Arch Linux, sudo and base-devel." >&2
+    exit 1
+  fi
+done
+need_uinput=no
+if ! pacman -Q python-uinput >/dev/null 2>&1; then
+  need_uinput=yes
+  if ! command -v yay >/dev/null; then
+    cat >&2 <<'EOF'
+python-uinput is required from the AUR, but yay is not installed.
+Please install yay first, then rerun this installer.
+As your regular user, in a separate working directory:
+  sudo pacman -S --needed base-devel git
+  git clone https://aur.archlinux.org/yay.git
+  cd yay
+Review PKGBUILD and the other build files, then run:
+  makepkg -si
+If you prefer another helper or a manual AUR build, install python-uinput
+yourself and rerun this script; yay is only needed for automatic AUR setup.
+EOF
+    exit 1
+  fi
+  read -r -p 'Install python-uinput using yay? Review its build files when prompted. [y/N] ' answer
+  case "$answer" in
+    y|Y|yes|YES) ;;
+    *) echo 'Cancelled; no package installation performed.'; exit 1 ;;
+  esac
+fi
+
+echo 'Authenticating for installation. The sudo timestamp is refreshed until this script exits.'
+sudo -v
+installer_pid=$$
+(
+  while kill -0 "$installer_pid" 2>/dev/null; do
+    sleep 45
+    sudo -n -v >/dev/null 2>&1 || exit
+  done
+) &
+sudo_refresh_pid=$!
+cleanup() {
+  kill "$sudo_refresh_pid" 2>/dev/null || true
+  wait "$sudo_refresh_pid" 2>/dev/null || true
+}
+trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+
+if [[ "$need_uinput" == yes ]]; then
+  yay -S --needed python-uinput
+  pacman -Q python-uinput >/dev/null || { echo 'python-uinput was not installed.' >&2; exit 1; }
+fi
 root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 (cd "$root/pkgbuild" && makepkg --syncdeps --install --cleanbuild --force)
 config="$HOME/.config/g910-gkeys"
