@@ -1,6 +1,14 @@
 from copy import deepcopy
 
+import uinput
+from g910_gkeys.data_mappers.char_uinput_mapper import keys, click
 from g910_gkeys.misc.config import Config as BaseConfig
+
+
+# Shared by driver and GUI validation. Keypad plus avoids layout-specific shifts.
+for layout, mapping in keys.items():
+    if layout != 'control':
+        mapping.setdefault('+', click(uinput.KEY_KPPLUS))
 
 
 class LayerState:
