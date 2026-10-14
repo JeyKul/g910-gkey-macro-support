@@ -1,11 +1,12 @@
 pkgname=g910-gkeys-git
 pkgver=0.4.2
-pkgrel=2
+pkgrel=3
 pkgdesc='GKey support for Logitech keyboards on GNU/Linux'
 arch=('any')
 url='https://github.com/JeyKul/g910-gkey-macro-support'
 license=('GPL-3.0-or-later')
 depends=('python' 'python-pyusb' 'python-uinput' 'libusb')
+optdepends=('pyside6: G910 Control graphical configurator and tray icon')
 makedepends=('git' 'python-build' 'python-installer' 'python-wheel' 'python-setuptools')
 provides=('g910-gkeys')
 conflicts=('g910-gkeys')
@@ -31,4 +32,6 @@ package() {
   sed -i 's|ExecStart=/usr/bin/env g910-gkeys|ExecStart=/usr/bin/g910-gkeys|' "$pkgdir/usr/lib/systemd/user/g910-gkeys.service"
   install -Dm644 etc/60-g910-gkeys.rules "$pkgdir/usr/lib/udev/rules.d/60-g910-gkeys.rules"
   install -Dm644 etc/uinput-g910-gkeys.conf "$pkgdir/usr/lib/modules-load.d/uinput-g910-gkeys.conf"
+  install -Dm644 etc/io.github.JeyKul.G910Control.desktop "$pkgdir/usr/share/applications/io.github.JeyKul.G910Control.desktop"
+  install -Dm644 etc/io.github.JeyKul.G910Control.svg "$pkgdir/usr/share/icons/hicolor/scalable/apps/io.github.JeyKul.G910Control.svg"
 }

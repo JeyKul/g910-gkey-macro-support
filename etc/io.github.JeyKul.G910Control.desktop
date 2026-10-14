@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=G910 Control
+GenericName=Keyboard Macro Configurator
+Comment=Configure Logitech G910 G-keys and MR layers
+Exec=/usr/bin/python -m g910_gkeys.gui_interactions
+Icon=io.github.JeyKul.G910Control
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=Logitech;G910;keyboard;macro;G-key;
+StartupNotify=false
