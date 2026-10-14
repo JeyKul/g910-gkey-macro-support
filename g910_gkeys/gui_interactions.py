@@ -5,6 +5,7 @@ from PySide6.QtCore import QEvent, QMimeData, QObject, Qt
 from PySide6.QtGui import QDrag
 from PySide6.QtWidgets import (QApplication, QHBoxLayout, QMenu, QMessageBox, QPushButton)
 from g910_gkeys.visual_gui import VisualEditor
+from g910_gkeys.tray import TrayController
 
 MIME = 'application/x-g910-binding'
 
@@ -139,6 +140,7 @@ def main():
     try:
         window = VisualEditor()
         window.binding_interactions = BindingInteractions(window)
+        window.tray_controller = TrayController(window)
     except Exception as error:
         QMessageBox.critical(None, 'Cannot open configurator', str(error))
         return 1
