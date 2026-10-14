@@ -1,35 +1,34 @@
-# Maintainer: Jan Subelj <jan dot subelj010 at gmail dot com>
-# Contributor: Jan Subelj <jan dot subelj010 at gmail dot com>
 pkgname=g910-gkeys-git
-_appname=g910-gkeys
-_gitname=g910-gkey-macro-support
 pkgver=0.4.2
-pkgrel=1
-pkgdesc='GKey support for Logitech G910 Keyboard on GNU/Linux'
-url='https://github.com/JSubelj/g910-gkey-macro-support'
+pkgrel=2
+pkgdesc='GKey support for Logitech keyboards on GNU/Linux'
 arch=('any')
-license=('GPL3')
-depends=('python-pyusb' 'python-uinput')
-makedepends=('git' 'systemd' 'python-build' 'python-installer' 'python-wheel')
-source=('git+https://github.com/JSubelj/g910-gkey-macro-support.git')
-install=${pkgname}.install
-backup=("etc/g910-gkeys/config.json" "usr/lib/systemd/user/g910-gkeys.service" "etc/udev/rules.d/60-g910-gkeys.rules" "etc/modules-load.d/uinput-g910-gkeys.conf")
-md5sums=('SKIP')
+url='https://github.com/JeyKul/g910-gkey-macro-support'
+license=('GPL-3.0-or-later')
+depends=('python' 'python-pyusb' 'python-uinput' 'libusb')
+makedepends=('git' 'python-build' 'python-installer' 'python-wheel' 'python-setuptools')
+provides=('g910-gkeys')
+conflicts=('g910-gkeys')
+backup=('etc/g910-gkeys/config.json')
+source=('g910-source::git+https://github.com/JeyKul/g910-gkey-macro-support.git#branch=dev')
+sha256sums=('SKIP')
+
+pkgver() {
+  cd "$srcdir/g910-source"
+  printf '0.4.2.r%s.g%s' "$(git rev-list --count HEAD)" "$(git rev-parse --short HEAD)"
+}
 
 build() {
-  cd ${srcdir}/${_gitname}
+  cd "$srcdir/g910-source"
   python -m build --wheel --no-isolation
 }
 
-pkgver() {
-  cd "$_gitname"
-  git describe --long | sed 's/\([^-]*-g\)/r\1/;s/-/./g'
-}
-
 package() {
-  cd ${srcdir}/${_gitname}
+  cd "$srcdir/g910-source"
   python -m installer --destdir="$pkgdir" dist/*.whl
-  install -Dm 644 -t $pkgdir/usr/lib/systemd/user etc/g910-gkeys.service
-  install -Dm 644 -t $pkgdir/etc/udev/rules.d/ etc/60-g910-gkeys.rules
-  install -Dm 644 -t $pkgdir/etc/modules-load.d/ etc/uinput-g910-gkeys.conf
+  install -Dm644 etc/config.json "$pkgdir/etc/g910-gkeys/config.json"
+  install -Dm644 etc/g910-gkeys.service "$pkgdir/usr/lib/systemd/user/g910-gkeys.service"
+  sed -i 's|ExecStart=/usr/bin/env g910-gkeys|ExecStart=/usr/bin/g910-gkeys|' "$pkgdir/usr/lib/systemd/user/g910-gkeys.service"
+  install -Dm644 etc/60-g910-gkeys.rules "$pkgdir/usr/lib/udev/rules.d/60-g910-gkeys.rules"
+  install -Dm644 etc/uinput-g910-gkeys.conf "$pkgdir/usr/lib/modules-load.d/uinput-g910-gkeys.conf"
 }

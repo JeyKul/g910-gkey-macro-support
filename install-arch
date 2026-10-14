@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+set -euo pipefail
+if (( EUID == 0 )); then
+  echo 'Run as your regular desktop user, not root.' >&2
+  exit 1
+fi
+start=yes
+case "${1:-}" in
+  '') ;;
+  -n) start=no ;;
+  *) echo "Usage: bash install-arch [-n]" >&2; exit 1 ;;
+esac
+if (( $# > 1 )); then
+  echo "Usage: bash install-arch [-n]" >&2
+  exit 1
+fi
+command -v pacman >/dev/null || { echo 'This helper requires Arch Linux/pacman.' >&2; exit 1; }
+command -v makepkg >/dev/null || { echo 'Install base-devel first: sudo pacman -S --needed base-devel git' >&2; exit 1; }
+root=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
+(cd "$root/pkgbuild" && makepkg --syncdeps --install --cleanbuild --force)
+config="$HOME/.config/g910-gkeys"
+mkdir -p "$config"
+if [[ ! -e "$config/config.json" ]]; then
+  cp /etc/g910-gkeys/config.json "$config/config.json"
+fi
+sudo modprobe uinput
+sudo udevadm control --reload-rules
+systemctl --user daemon-reload
+echo 'Unplug and reconnect your keyboard so the new udev rules apply.'
+if [[ "$start" == yes ]]; then
+  systemctl --user enable --now g910-gkeys.service
+else
+  echo 'Start later: systemctl --user enable --now g910-gkeys.service'
+fi
