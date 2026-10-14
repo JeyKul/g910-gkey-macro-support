@@ -7,12 +7,19 @@ from g910_gkeys.misc.logger import Logger
 
 def change_profile(device: USBDevice, profile: str):
     log = Logger().logger(__name__)
-    command = device.keyboard.events.memoryKeysLEDs.get(profile)
+    led_commands = device.keyboard.events.memoryKeysLEDs
+    command = led_commands.get(profile)
     if command is None:
         log.warning("No memory LED command for profile %s", profile)
         return False
 
-    commands = command if isinstance(command, (list, tuple)) else [command]
+    commands = list(command) if isinstance(command, (list, tuple)) else [command]
+    record_commands = led_commands.get("MEMORY_RECORD")
+    # The G910 record LED has its own off/on packets, separate from M1-M3.
+    if profile in ("MEMORY_1", "MEMORY_2", "MEMORY_3"):
+        if isinstance(record_commands, (list, tuple)) and record_commands:
+            commands.insert(0, record_commands[0])
+
     matched = True
     try:
         for packet in commands:
